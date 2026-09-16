@@ -294,35 +294,18 @@ def render_food_detail_view(result: FoodFreshnessResult, reading: SensorReading,
                         freshness_score=result.freshness_score
                     )
                     
-                    if not isinstance(res, dict):
-                        st.error("Received unexpected response format from AI analysis.")
-                    elif res.get("error"):
-                        err_msg = res.get("message") or res.get("error") or "AI analysis encountered an issue."
-                        st.error(f"⚠️ {err_msg}")
+                    if "error" in res:
+                        st.error(res["message"])
                     else:
-                        detected_item = res.get("detected_item") or result.food_name
-                        safety_verdict = res.get("safety_verdict") or "Normal"
-                        visual_condition = res.get("visual_condition") or "Visual features processed."
-                        risk_reasoning = res.get("risk_reasoning") or "Environmental and visual telemetry correlated."
-
-                        st.success(f"**Identified:** {detected_item}")
-                        st.info(f"**Safety Verdict:** {safety_verdict}")
-                        st.write(f"**Visual Observation:** {visual_condition}")
-                        st.write(f"**Risk Reasoning:** {risk_reasoning}")
+                        st.success(f"**Identified:** {res.get('detected_item', result.food_name)}")
+                        st.info(f"**Safety Verdict:** {res.get('safety_verdict', 'Normal')}")
+                        st.write(f"**Visual Observation:** {res.get('visual_condition')}")
+                        st.write(f"**Risk Reasoning:** {res.get('risk_reasoning')}")
                         
-                        recipes = res.get("zero_waste_recipes") or []
-                        if recipes:
-                            st.markdown("#### 🍳 Zero-Waste Recipes")
-                            for idx, rec in enumerate(recipes, 1):
-                                if isinstance(rec, dict):
-                                    rec_title = rec.get("recipe_name") or f"Recipe {idx}"
-                                    rec_time = rec.get("prep_time_minutes", 15)
-                                    rec_inst = rec.get("instructions") or "Follow standard cooking guidelines."
-                                    with st.expander(f"**{idx}. {rec_title}** ({rec_time} mins)", expanded=True):
-                                        st.write(rec_inst)
-                                elif isinstance(rec, str):
-                                    with st.expander(f"**{idx}. Quick Recipe**", expanded=True):
-                                        st.write(rec)
+                        st.markdown("#### 🍳 Zero-Waste Recipes")
+                        for idx, rec in enumerate(res.get("zero_waste_recipes", []), 1):
+                            with st.expander(f"**{idx}. {rec.get('recipe_name')}** ({rec.get('prep_time_minutes')} mins)", expanded=True):
+                                st.write(rec.get("instructions"))
         else:
             st.info("💡 Capture or upload an image to run the multimodal visual inspection.")
 

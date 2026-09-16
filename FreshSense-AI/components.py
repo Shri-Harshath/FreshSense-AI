@@ -574,30 +574,15 @@ def render_reference_food_detail_view(result: FoodFreshnessResult, reading: Sens
                         gas_ppm=reading.gas_ppm,
                         freshness_score=result.freshness_score
                     )
-                    if not isinstance(res, dict):
-                        st.error("Received unexpected response format from AI analysis.")
-                    elif res.get("error"):
-                        err_msg = res.get("message") or res.get("error") or "AI analysis encountered an issue."
-                        st.error(f"⚠️ {err_msg}")
+                    if "error" in res:
+                        st.error(res["message"])
                     else:
-                        detected_item = res.get("detected_item") or result.food_name
-                        visual_cond = res.get("visual_condition") or "Surface features processed."
-                        verdict = res.get("safety_verdict") or "Normal"
-
-                        st.success(f"**Identified:** {detected_item}")
-                        st.write(f"**Condition:** {visual_cond}")
-                        st.write(f"**Verdict:** {verdict}")
-                        recipes = res.get("zero_waste_recipes") or []
-                        for idx, rec in enumerate(recipes, 1):
-                            if isinstance(rec, dict):
-                                rec_title = rec.get("recipe_name") or f"Recipe {idx}"
-                                rec_time = rec.get("prep_time_minutes", 15)
-                                rec_inst = rec.get("instructions") or "Follow standard preparation steps."
-                                with st.expander(f"**{idx}. {rec_title}** ({rec_time} mins)", expanded=True):
-                                    st.write(rec_inst)
-                            elif isinstance(rec, str):
-                                with st.expander(f"**{idx}. Quick Recipe**", expanded=True):
-                                    st.write(rec)
+                        st.success(f"**Identified:** {res.get('detected_item', result.food_name)}")
+                        st.write(f"**Condition:** {res.get('visual_condition')}")
+                        st.write(f"**Verdict:** {res.get('safety_verdict')}")
+                        for idx, rec in enumerate(res.get("zero_waste_recipes", []), 1):
+                            with st.expander(f"**{idx}. {rec.get('recipe_name')}** ({rec.get('prep_time_minutes')} mins)", expanded=True):
+                                st.write(rec.get("instructions"))
 
 
 # -----------------------------------------------------------------------------
