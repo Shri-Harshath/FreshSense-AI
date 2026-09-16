@@ -30,21 +30,11 @@ def _load_api_key() -> str:
     load_dotenv(find_dotenv(), override=True)
 
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        try:
-            import streamlit as st
-            if "GEMINI_API_KEY" in st.secrets:
-                api_key = st.secrets["GEMINI_API_KEY"]
-            elif "GOOGLE_API_KEY" in st.secrets:
-                api_key = st.secrets["GOOGLE_API_KEY"]
-        except Exception:
-            pass
-
     if api_key:
-        api_key = str(api_key).strip().strip('"').strip("'")
+        api_key = api_key.strip().strip('"').strip("'")
     
     if not api_key or api_key == "your_actual_gemini_api_key_here":
-        raise ValueError("GEMINI_API_KEY is not set or contains the default placeholder. Please add your real Gemini API key to the .env file or Streamlit secrets.")
+        raise ValueError("GEMINI_API_KEY is not set or contains the default placeholder. Please add your real Gemini API key to the .env file.")
     
     return api_key
 
