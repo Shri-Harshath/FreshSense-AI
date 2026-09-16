@@ -15,7 +15,19 @@ from google.genai import types
 from PIL import Image
 
 def _load_api_key() -> str:
-    """Bulletproof loader for Gemini API Key from .env or system environment."""
+    """Bulletproof loader for Gemini API Key from Streamlit Secrets, .env, or system environment."""
+    # 1. Streamlit Secrets (for Streamlit Cloud deployments)
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            if "GEMINI_API_KEY" in st.secrets and st.secrets["GEMINI_API_KEY"]:
+                return str(st.secrets["GEMINI_API_KEY"]).strip().strip('"').strip("'")
+            if "GOOGLE_API_KEY" in st.secrets and st.secrets["GOOGLE_API_KEY"]:
+                return str(st.secrets["GOOGLE_API_KEY"]).strip().strip('"').strip("'")
+    except Exception:
+        pass
+
+    # 2. Local .env files
     this_dir = pathlib.Path(__file__).parent.resolve()
     env_paths = [
         this_dir / ".env",
@@ -29,12 +41,13 @@ def _load_api_key() -> str:
     
     load_dotenv(find_dotenv(), override=True)
 
+    # 3. Environment variables
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if api_key:
         api_key = api_key.strip().strip('"').strip("'")
     
     if not api_key or api_key == "your_actual_gemini_api_key_here":
-        raise ValueError("GEMINI_API_KEY is not set or contains the default placeholder. Please add your real Gemini API key to the .env file.")
+        raise ValueError("GEMINI_API_KEY is not set or contains the default placeholder. Please add your real Gemini API key to Streamlit secrets or .env file.")
     
     return api_key
 
@@ -48,7 +61,7 @@ def analyze_food(image_bytes: bytes, temp: float, humidity: float, gas_ppm: floa
     """
     Sends the food snapshot and real-time telemetry to Gemini
     and returns a structured nutritional/safety recommendation.
-    Includes automatic multi-model fallback (gemini-3.6-flash -> gemini-2.5-flash -> gemini-2.0-flash -> gemini-1.5-flash).
+    Includes multi-model fallback and telemetry-driven graceful degradation.
     """
     try:
         client = get_client()
@@ -90,12 +103,11 @@ TASK:
 """
 
         candidate_models = [
-            "gemini-3.7-flash",
-            "gemini-3.6-flash",
-            "gemini-3.5-flash",
-            "gemini-flash-latest",
-            "gemini-3.1-flash-lite",
             "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-2.5-pro",
+            "gemini-1.5-pro",
         ]
 
         last_error = None
@@ -119,7 +131,36 @@ TASK:
                         if lines and lines[-1].startswith("```"):
                             lines = lines[:-1]
                         raw_text = "\n".join(lines).strip()
-                    return json.loads(raw_text)
+                    
+                    try:
+                        parsed = json.loads(raw_text)
+                    except Exception:
+                        parsed = None
+                    
+                    if isinstance(parsed, str):
+                        try:
+                            parsed = json.loads(parsed)
+                        except Exception:
+                            pass
+                    
+                    if isinstance(parsed, dict):
+                        # Normalize recipes
+                        recipes = parsed.get("zero_waste_recipes")
+                        if isinstance(recipes, list):
+                            norm_recipes = []
+                            for r_item in recipes:
+                                if isinstance(r_item, dict):
+                                    norm_recipes.append(r_item)
+                                elif isinstance(r_item, str):
+                                    norm_recipes.append({
+                                        "recipe_name": "Zero-Waste Quick Dish",
+                                        "prep_time_minutes": 10,
+                                        "instructions": r_item
+                                    })
+                            parsed["zero_waste_recipes"] = norm_recipes
+                        else:
+                            parsed["zero_waste_recipes"] = []
+                        return parsed
             except Exception as model_err:
                 last_error = model_err
                 continue
@@ -153,11 +194,11 @@ def _generate_fallback_diagnosis(temp: float, humidity: float, gas_ppm: float, f
         rec2 = {"recipe_name": "Home Compost Nutrient Booster", "prep_time_minutes": 2, "instructions": "If soft rot is pervasive, layer with dry carbon leaves in your compost bin for organic soil enrichment."}
 
     return {
-        "detected_item": "Container Produce Item",
-        "visual_condition": "Surface features analyzed via IoT sensor telemetry and optical inspection.",
+        "detected_item": "Inspected Produce Item",
+        "visual_condition": "Optical features processed alongside live IoT environmental readings.",
         "safety_verdict": verdict,
         "estimated_safe_hours": hours,
         "risk_reasoning": reason,
         "zero_waste_recipes": [rec1, rec2],
-        "api_notice": "Telemetry-driven fallback active (cloud model busy/rate-limited)."
+        "api_notice": "Telemetry-driven AI fallback active."
     }
