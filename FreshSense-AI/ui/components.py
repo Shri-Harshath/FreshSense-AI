@@ -1,18 +1,8 @@
 """
-FreshSense AI - High-Quality Animated UI Components
-===================================================
-Renders the complete visual hierarchy for FreshSense AI:
-- Header with Brand, Tagline, Kitchen Container 01 ● Simulation Mode, and Animated Bell Badge (🔔 2)
-- Overall Freshness Hero Card (72%, 2 items need attention)
-- Main Freshness Alert Hero (⚠ FRESHNESS ALERT • 🍅 TOMATOES • MAY SPOIL SOON • ~8 hrs left)
-- YOUR FOOD section with Filter Tabs & Responsive Cards (Tomatoes, Lemon, Bell Pepper, Apple, Banana, Leafy Greens)
-- ENVIRONMENT CONDITIONS Cards (24.8°C Temp ↑ Rising, 68% Humidity → Stable, 420 ppm Gas ↑ Rising)
-- FRESHSENSE AI Analysis Section (87% Confidence, Transparent Biological Reasoning)
-- Deep-Dive Food Detail View with 48h Plotly Timeline, Sensor Breakdowns & Recipe Copilot
-- Real Notification Center with Read/Unread tracking, Filters & Food Links
-- Historical Analytics (24H / 7D / 30D)
-- Simulation Panel with ⚡ RAPID SPOILAGE DEMO (94% FRESH -> 76% MONITOR -> 48% AT RISK -> 24% CRITICAL)
-- Settings & Device Specifications
+FreshSense AI - Commercial-Grade UI Components
+==============================================
+Faithfully implements the exact visual layout, card composition, photorealistic
+imagery, soft shadows, and typography from the design reference.
 """
 
 from datetime import datetime
@@ -26,6 +16,25 @@ from core.freshness_engine import FoodFreshnessResult
 from core.sensor_service import SensorReading, SimulationSensorProvider
 from core.notification_service import NotificationManager, FreshnessNotification
 from core.history_service import HistoryService
+from ui.assets_data import (
+    HERO_CONTAINER_B64,
+    TOMATO_B64,
+    LEMON_B64,
+    PEPPER_B64,
+    APPLE_B64,
+    BANANA_B64,
+    GREENS_B64,
+    AI_ORB_B64,
+)
+
+FOOD_IMAGES = {
+    "tomato": TOMATO_B64,
+    "lemon": LEMON_B64,
+    "bell_pepper": PEPPER_B64,
+    "apple": APPLE_B64,
+    "banana": BANANA_B64,
+    "leafy_greens": GREENS_B64,
+}
 
 
 def render_html(html_code: str):
@@ -36,211 +45,441 @@ def render_html(html_code: str):
         st.markdown(html_code, unsafe_allow_html=True)
 
 
+# -----------------------------------------------------------------------------
+# 1. Top Header Bar (Matching Reference)
+# -----------------------------------------------------------------------------
+
 def render_dashboard_header(reading: SensorReading, unread_count: int, on_click_alerts: Callable[[], None]):
-    """Renders the top brand header, container node mode, and animated notification bell."""
-    hcol1, hcol2 = st.columns([3, 1])
+    """Renders the top bar with project tagline, container node mode, and notification bell."""
+    hcol1, hcol2 = st.columns([3.2, 1.8])
     with hcol1:
         render_html(
-            """<div style="padding: 2px 0 6px 0;"><div style="font-size: 1.95rem; font-weight: 900; letter-spacing: -0.03em; background: linear-gradient(135deg, #ffffff 30%, #34d399 70%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;">FreshSense AI</div><div style="font-size: 0.95rem; font-weight: 600; color: #10b981; letter-spacing: 0.02em; margin-top: 2px;">Know Before It Spoils.</div><div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;"><span style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Kitchen Container 01</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); padding: 2px 8px; border-radius: 999px;">● Simulation Mode</span></div></div>"""
+            """
+            <div>
+                <div class="brand-hero-title">Know Before It Spoils.</div>
+                <p class="brand-hero-desc">FreshSense AI monitors your food's environment and predicts freshness using smart sensors and AI.</p>
+            </div>
+            """
         )
 
     with hcol2:
-        bell_badge_text = f"🔔 {unread_count}" if unread_count > 0 else "🔔 0"
-        btn_type = "primary" if unread_count > 0 else "secondary"
-        render_html("<div style='margin-top: 6px;'></div>")
-        if st.button(bell_badge_text, key="btn_header_bell", type=btn_type, use_container_width=True):
-            on_click_alerts()
+        top_pill_html = f"""
+        <div class="top-header-pill-bar">
+            <div class="top-node-pill">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+                <span>{reading.device_name}</span>
+                <span style="color:#64748b; font-weight:600; font-size:0.75rem;">● Simulation Mode</span>
+            </div>
+            <div class="top-avatar-circle">👤</div>
+        </div>
+        """
+        render_html(top_pill_html)
+        
+        # Bell button aligned right
+        b_col1, b_col2 = st.columns([2, 1])
+        with b_col2:
+            bell_label = f"🔔 {unread_count}" if unread_count > 0 else "🔔 0"
+            btn_type = "primary" if unread_count > 0 else "secondary"
+            if st.button(bell_label, key="btn_hdr_bell", type=btn_type, use_container_width=True):
+                on_click_alerts()
 
+
+# -----------------------------------------------------------------------------
+# 2. Hero Row (Overall Freshness + 3D Smart Container + Freshness Alert)
+# -----------------------------------------------------------------------------
 
 def render_overall_freshness_hero(results: List[FoodFreshnessResult]):
     """
-    Renders the OVERALL FRESHNESS Hero Card:
-    - OVERALL FRESHNESS
-    - 72%
-    - 2 items need attention
+    Renders the Left (Overall Freshness) and Center (3D Smart Container) columns of the Hero Row.
+    Reserves the 3rd column for render_main_alert_card.
     """
     scores = [r.freshness_score for r in results]
     avg_score = sum(scores) / len(scores) if scores else 72.0
     attention_count = sum(1 for r in results if r.status in ["MONITOR", "AT RISK", "CRITICAL", "SPOILED"])
-    
-    status_text = f"{attention_count} items need attention" if attention_count > 0 else "All items in peak condition"
 
-    gauge_color = "#10b981" if avg_score >= 80 else ("#f59e0b" if avg_score >= 60 else "#f43f5e")
+    h_col1, h_col2, h_col3 = st.columns([1.05, 1.25, 1.15], gap="medium")
 
-    render_html(
-        f"""<div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(20, 32, 58, 0.9) 100%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 18px 22px; margin-top: 10px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.35);"><div style="display: flex; justify-content: space-between; align-items: center;"><div style="font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8;">OVERALL FRESHNESS</div><div style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(56, 189, 248, 0.25);">Active Multi-Sensor Telemetry</div></div><div style="display: flex; align-items: baseline; gap: 10px; margin: 8px 0 4px 0;"><span style="font-size: 2.7rem; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: {gauge_color}; line-height: 1;">{avg_score:.0f}%</span><span style="font-size: 1rem; font-weight: 700; color: #f87171;">{status_text}</span></div><div style="height: 6px; width: 100%; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; margin-top: 6px;"><div style="height: 100%; width: {avg_score}%; background: linear-gradient(90deg, #f43f5e 0%, #f59e0b 50%, #10b981 100%); border-radius: 999px;"></div></div></div>"""
-    )
+    # 1. Left: OVERALL FRESHNESS Card
+    with h_col1:
+        render_html(
+            f"""
+            <div class="overall-freshness-mint-card">
+                <div style="position: absolute; top: 14px; left: 18px; display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;">
+                    <span>🍃 OVERALL FRESHNESS</span>
+                </div>
+                
+                <div class="overall-donut-wrapper" style="margin-top: 14px;">
+                    <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                              fill="none" stroke="rgba(255, 255, 255, 0.25)" stroke-width="3.5" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                              fill="none" stroke="url(#mintRingGrad)" stroke-width="3.5" 
+                              stroke-dasharray="{avg_score}, 100" stroke-linecap="round" />
+                        <defs>
+                            <linearGradient id="mintRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff" />
+                                <stop offset="50%" stop-color="#00d2ff" />
+                                <stop offset="100%" stop-color="#a855f7" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="overall-donut-text">{avg_score:.0f}%</div>
+                </div>
+                
+                <div style="margin-top: 14px;">
+                    <div style="font-size: 0.92rem; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <span>🔔</span> <span>{attention_count} items need attention</span>
+                    </div>
+                    <div style="font-size: 0.82rem; font-weight: 700; opacity: 0.95; display: flex; align-items: center; gap: 6px;">
+                        <span>📦</span> <span>{len(results)} foods monitored</span>
+                    </div>
+                </div>
+                
+                <!-- Decorative Corner Sparkline -->
+                <div style="position: absolute; bottom: 10px; right: 14px; opacity: 0.5;">
+                    <svg width="45" height="24" viewBox="0 0 45 24">
+                        <path d="M0,20 L12,14 L22,17 L34,8 L45,4" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+            """
+        )
+
+    # 2. Center: Large 3D Smart Food Container on Pedestal
+    with h_col2:
+        render_html(
+            f"""
+            <div class="center-container-hero-card">
+                <img src="{HERO_CONTAINER_B64}" alt="FreshSense AI Smart Food Container" class="center-container-img" />
+            </div>
+            """
+        )
+
+    # Save 3rd column for render_main_alert_card
+    st.session_state["_hero_col3"] = h_col3
 
 
 def render_main_alert_card(results: List[FoodFreshnessResult], on_view_analysis: Callable[[str], None]):
     """
-    Renders the MAIN ALERT CARD (The most important card on the dashboard):
-    ⚠ FRESHNESS ALERT
-    🍅 TOMATOES
-    MAY SPOIL SOON
-    72% Freshness
-    ~8 hours remaining
-    Risk: HIGH
-    Why: Temperature and gas readings are trending upward.
-    [ VIEW ANALYSIS ]
+    Renders the Right column of the Hero Row:
+    Freshness Alert Card with photorealistic tomato, stats, and action buttons.
     """
     tomato_item = next((r for r in results if r.food_id == "tomato"), None)
     urgent_items = [r for r in results if r.status in ["AT RISK", "CRITICAL", "SPOILED"]]
     top_item = tomato_item if (tomato_item and tomato_item.status in ["AT RISK", "CRITICAL", "MONITOR"]) else (urgent_items[0] if urgent_items else results[0])
 
-    stat_color = "#f43f5e" if top_item.freshness_score < 75 else "#f59e0b"
-    risk_badge = "HIGH" if top_item.status == "AT RISK" else ("CRITICAL" if top_item.status == "CRITICAL" else "MODERATE")
+    h_col3 = st.session_state.pop("_hero_col3", None)
+    target_container = h_col3 if h_col3 is not None else st.container()
 
-    render_html(
-        f"""<div class="freshness-alert-hero" style="margin-top: 4px; margin-bottom: 18px;"><div class="alert-header-tag"><span style="font-size: 1.15rem;">⚠</span> FRESHNESS ALERT</div><div class="alert-food-title"><span style="font-size: 2.2rem;">{top_item.icon}</span> <span>{top_item.food_name.upper()}</span></div><div class="alert-food-sub" style="text-transform: uppercase; letter-spacing: 0.04em;">MAY SPOIL SOON</div><div class="freshness-meter-wrap"><div class="freshness-meter-fill" style="width: {top_item.freshness_score}%;"></div></div><div class="alert-stats-box"><div><div class="alert-stat-label">Freshness Score</div><div class="alert-stat-val" style="color: {stat_color};">{top_item.freshness_score:.0f}% <span style="font-size: 0.9rem; font-weight: 700; color: #fca5a5;">Fresh</span></div></div><div style="text-align: center;"><div class="alert-stat-label">Risk Level</div><div class="alert-stat-val" style="color: #f43f5e; font-size: 1.25rem;">{risk_badge}</div></div><div style="text-align: right;"><div class="alert-stat-label">Remaining Time</div><div class="alert-stat-val" style="color: #ffffff; font-size: 1.25rem;">{top_item.estimated_remaining_str}</div></div></div><div style="font-size: 0.86rem; color: #fecdd3; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 10px; border-left: 3px solid #f43f5e; margin-bottom: 14px;"><strong>Why:</strong> {top_item.primary_reason}</div></div>"""
-    )
+    with target_container:
+        render_html(
+            f"""
+            <div class="alert-banner-sunset">
+                <div>
+                    <div class="alert-banner-tag">🔔 FRESHNESS ALERT</div>
+                    
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+                        <div style="width: 76px; height: 76px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));">
+                            <img src="{TOMATO_B64}" alt="{top_item.food_name}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                        </div>
+                        <div>
+                            <div style="font-size: 1.35rem; font-weight: 900; line-height: 1.1;">{top_item.food_name}</div>
+                            <div style="font-size: 0.92rem; font-weight: 800; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.02em;">MAY SPOIL SOON</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.78rem; font-weight: 800;">
+                        <span style="background: rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 999px;">⏱ {top_item.freshness_score:.0f}% Freshness</span>
+                        <span style="background: rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 999px;">🔴 {top_item.estimated_remaining_str}</span>
+                        <span style="background: #ffffff; color: #e11d48; padding: 3px 8px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">High Risk</span>
+                    </div>
+                    
+                    <div style="font-size: 0.8rem; opacity: 0.95; line-height: 1.4; margin-bottom: 12px;">
+                        Temperature and gas levels are trending upward.
+                    </div>
+                </div>
+            </div>
+            """
+        )
 
-    if st.button(f"🔍 [ VIEW ANALYSIS FOR {top_item.food_name.upper()} ]", key=f"btn_hero_view_{top_item.food_id}", type="primary", use_container_width=True):
-        on_view_analysis(top_item.food_id)
+        ab_col1, ab_col2 = st.columns([1.6, 1])
+        with ab_col1:
+            if st.button("View Analysis →", key=f"btn_hero_analysis_{top_item.food_id}", type="primary", use_container_width=True):
+                on_view_analysis(top_item.food_id)
+        with ab_col2:
+            if st.button("Dismiss", key="btn_hero_dismiss", use_container_width=True):
+                st.info("Alert acknowledged.")
 
+
+# -----------------------------------------------------------------------------
+# 3. YOUR FOOD 6-Column Grid (Matching Reference)
+# -----------------------------------------------------------------------------
 
 def render_your_food_section(results: List[FoodFreshnessResult], on_select_food: Callable[[str], None], selected_filter: str = "All"):
     """
-    Renders the 'YOUR FOOD' section with filter pills and detailed food cards:
-    - 🍅 Tomatoes (72% Fresh | AT RISK | ~8 hours remaining | ↑ Risk increasing)
-    - 🍋 Lemon (94% Fresh | FRESH | ~3.2 days remaining | → Stable)
-    - 🫑 Bell Pepper (81% Fresh | MONITOR | ~1.4 days remaining | ↑ Risk increasing)
-    - 🍎 Apple (88% Fresh | FRESH | ~12 days remaining | → Stable)
-    - 🍌 Banana (65% Fresh | MONITOR | ~1.8 days remaining | ↑ Risk increasing)
-    - 🥬 Leafy Greens (48% Fresh | AT RISK | ~14 hours remaining | ↑ Risk increasing)
+    Renders the 'YOUR FOOD' section:
+    - 6 tall cards side-by-side with photorealistic fruit/vegetable images,
+      ambient colored top glows, badges, and customized gradient buttons.
     """
-    render_html("""<div class="section-header-title">YOUR FOOD</div>""")
+    render_html(
+        """
+        <div class="section-title-wrap">
+            <h3 class="section-title-text">
+                <span>🍃</span> YOUR FOOD
+            </h3>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; cursor: pointer;">View All →</span>
+        </div>
+        """
+    )
 
-    # Filter pills
-    fcol1, fcol2, fcol3, fcol4, fcol5 = st.columns(5)
-    with fcol1:
-        if st.button("All", key="tab_food_all", type="primary" if selected_filter == "All" else "secondary", use_container_width=True):
-            st.session_state.food_filter = "All"
-            st.rerun()
-    with fcol2:
-        if st.button("Fresh", key="tab_food_fresh", type="primary" if selected_filter == "Fresh" else "secondary", use_container_width=True):
-            st.session_state.food_filter = "Fresh"
-            st.rerun()
-    with fcol3:
-        if st.button("Monitor", key="tab_food_monitor", type="primary" if selected_filter == "Monitor" else "secondary", use_container_width=True):
-            st.session_state.food_filter = "Monitor"
-            st.rerun()
-    with fcol4:
-        if st.button("At Risk", key="tab_food_risk", type="primary" if selected_filter == "At Risk" else "secondary", use_container_width=True):
-            st.session_state.food_filter = "At Risk"
-            st.rerun()
-    with fcol5:
-        if st.button("Critical", key="tab_food_crit", type="primary" if selected_filter == "Critical" else "secondary", use_container_width=True):
-            st.session_state.food_filter = "Critical"
-            st.rerun()
+    food_cols = st.columns(len(results))
 
-    filter_choice = st.session_state.get("food_filter", "All")
-    
-    # Filter the results
-    if filter_choice == "Fresh":
-        display_items = [r for r in results if r.status == "FRESH"]
-    elif filter_choice == "Monitor":
-        display_items = [r for r in results if r.status == "MONITOR"]
-    elif filter_choice == "At Risk":
-        display_items = [r for r in results if r.status == "AT RISK"]
-    elif filter_choice == "Critical":
-        display_items = [r for r in results if r.status in ["CRITICAL", "SPOILED"]]
-    else:
-        display_items = results
+    theme_map = {
+        "tomato": ("food-card-tomato", "btn-coral"),
+        "lemon": ("food-card-lemon", "btn-emerald"),
+        "bell_pepper": ("food-card-pepper", "btn-cyan"),
+        "apple": ("food-card-apple", "btn-pink"),
+        "banana": ("food-card-banana", "btn-amber"),
+        "leafy_greens": ("food-card-greens", "btn-emerald"),
+    }
 
-    if not display_items:
-        st.info(f"No items currently in '{filter_choice}' status.")
-        return
+    for idx, item in enumerate(results):
+        with food_cols[idx]:
+            card_class, btn_class = theme_map.get(item.food_id, ("food-card-tomato", "btn-coral"))
 
-    for item in display_items:
-        if item.status in ["AT RISK", "CRITICAL", "SPOILED"]:
-            badge_html = f'<span class="badge-neon-risk" style="background: {item.status_bg}; color: {item.status_color}; border: 1px solid {item.status_color};">⚠ {item.status}</span>'
-            border_glow = f"border: 1px solid {item.status_color};"
-        elif item.status == "MONITOR":
-            badge_html = f'<span class="badge-neon-monitor" style="background: {item.status_bg}; color: {item.status_color}; border: 1px solid {item.status_color};">● MONITOR</span>'
-            border_glow = "border: 1px solid rgba(245, 158, 11, 0.4);"
-        else:
-            badge_html = f'<span class="badge-neon-fresh" style="background: {item.status_bg}; color: {item.status_color}; border: 1px solid {item.status_color};">✓ FRESH</span>'
-            border_glow = "border: 1px solid rgba(16, 185, 129, 0.3);"
+            if item.status in ["AT RISK", "CRITICAL", "SPOILED"]:
+                badge_html = f'<span class="badge-pill-risk">{item.status}</span>'
+                trend_color = "#e11d48"
+            elif item.status == "MONITOR":
+                badge_html = f'<span class="badge-pill-monitor">MONITOR</span>'
+                trend_color = "#d97706"
+            else:
+                badge_html = f'<span class="badge-pill-fresh">FRESH</span>'
+                trend_color = "#059669"
 
-        rcol1, rcol2 = st.columns([3.8, 1.2])
-        with rcol1:
+            # Use photorealistic image asset if available
+            img_src = FOOD_IMAGES.get(item.food_id)
+            if img_src:
+                visual_html = f'<div class="food-visual-container"><img src="{img_src}" alt="{item.food_name}" /></div>'
+            else:
+                visual_html = f'<div class="food-visual-container" style="font-size:3rem;">{item.icon}</div>'
+
             render_html(
-                f"""<div style="background: rgba(18, 26, 45, 0.75); {border_glow} border-radius: 16px; padding: 12px 16px; margin-bottom: 8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div style="display: flex; align-items: center; gap: 12px;"><span style="font-size: 1.8rem;">{item.icon}</span><div><div style="font-size: 1.05rem; font-weight: 800; color: #ffffff;">{item.food_name}</div><div style="font-size: 0.78rem; color: #94a3b8;">Est. remaining: <strong style="color: #e2e8f0;">{item.estimated_remaining_str}</strong></div></div></div><div>{badge_html}</div></div><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.78rem; color: #cbd5e1;"><span style="font-weight: 700; color: {item.status_color};">{item.freshness_score:.0f}% Fresh</span><span style="color: {'#f87171' if 'increasing' in item.trend_str else '#34d399'}; font-weight: 600;">{item.trend_str}</span></div><div style="height: 4px; width: 100%; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; margin-top: 4px;"><div style="height: 100%; width: {item.freshness_score}%; background: {item.status_color}; border-radius: 999px;"></div></div></div>"""
+                f"""
+                <div class="food-card-tall {card_class}">
+                    <div class="food-card-header-glow"></div>
+                    {visual_html}
+                    <div>
+                        <div class="food-title-text">{item.food_name}</div>
+                        <div class="food-score-text">{item.freshness_score:.0f}% <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif;">Fresh</span></div>
+                        <div style="margin-bottom: 6px; z-index: 1;">{badge_html}</div>
+                        <div style="font-size: 0.74rem; color: #475569; font-weight: 700; margin-bottom: 2px; z-index: 1;">{item.estimated_remaining_str}</div>
+                        <div style="font-size: 0.72rem; font-weight: 800; color: {trend_color}; margin-bottom: 8px; z-index: 1;">{item.trend_str}</div>
+                    </div>
+                </div>
+                """
             )
-        with rcol2:
-            render_html("<div style='margin-top: 14px;'></div>")
-            if st.button("Analysis", key=f"btn_row_analysis_{item.food_id}", use_container_width=True):
-                on_select_food(item.food_id)
 
+            # Styled action button container
+            render_html(f"<div class='{btn_class}' style='margin-top: -6px;'>")
+            if st.button("View Analysis →", key=f"btn_grid_food_{item.food_id}", use_container_width=True):
+                on_select_food(item.food_id)
+            render_html("</div>")
+
+
+# -----------------------------------------------------------------------------
+# 4. Environment Conditions & FreshSense AI Analysis (Matching Bottom Row)
+# -----------------------------------------------------------------------------
 
 def render_environment_conditions(reading: SensorReading):
     """
-    Renders the 'ENVIRONMENT CONDITIONS' supporting section:
-    - Temperature: 24.8°C (↑ Rising)
-    - Humidity: 68% (→ Stable)
-    - Gas / VOC: 420 ppm (↑ Rising)
+    Renders the Left column of the bottom row (ENVIRONMENT CONDITIONS):
+    - 3 white rounded glass cards with colored SVG sparklines for Temperature, Humidity, Gas/VOC.
+    Reserves the 2nd column for render_freshsense_ai_analysis.
     """
-    render_html("""<div class="section-header-title">ENVIRONMENT CONDITIONS</div>""")
+    b_col1, b_col2 = st.columns([1.55, 1.45], gap="medium")
 
-    sc1, sc2, sc3 = st.columns(3)
-
-    with sc1:
-        temp_color = "#f43f5e" if reading.temperature_c > 22.0 else "#10b981"
-        temp_trend = "↑ Rising" if reading.temperature_c > 22.0 else "→ Stable"
+    with b_col1:
         render_html(
-            f"""<div class="sensor-box-card"><div style="font-size: 1.3rem; margin-bottom: 2px;">🌡️</div><div class="sensor-value-text" style="color: {temp_color};">{reading.temperature_c:.1f}°C</div><div class="sensor-label-text">Temperature</div><div style="font-size: 0.72rem; font-weight: 700; color: {'#f87171' if 'Rising' in temp_trend else '#34d399'}; margin-top: 4px;">{temp_trend}</div></div>"""
+            """
+            <div style="display: flex; align-items: center; gap: 8px; margin: 18px 0 10px 0;">
+                <span style="font-size: 1.05rem;">🍃</span>
+                <span style="font-size: 0.88rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: #0284c7;">ENVIRONMENT CONDITIONS</span>
+            </div>
+            """
         )
 
-    with sc2:
-        hum_color = "#06b6d4"
-        hum_trend = "→ Stable"
-        render_html(
-            f"""<div class="sensor-box-card"><div style="font-size: 1.3rem; margin-bottom: 2px;">💧</div><div class="sensor-value-text" style="color: {hum_color};">{reading.humidity_pct:.0f}%</div><div class="sensor-label-text">Humidity</div><div style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; margin-top: 4px;">{hum_trend}</div></div>"""
-        )
+        sc1, sc2, sc3 = st.columns(3)
+        with sc1:
+            render_html(
+                f"""
+                <div class="env-glass-card">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 800; color: #64748b;">
+                        <span>🌡️ Temperature</span>
+                    </div>
+                    <div>
+                        <div style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; font-weight: 900; color: #e11d48; margin-top: 4px;">
+                            {reading.temperature_c:.1f}°C
+                        </div>
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #e11d48; margin-top: 2px;">
+                            ↑ Rising
+                        </div>
+                    </div>
+                    <svg viewBox="0 0 100 24" style="width: 100%; height: 24px; margin-top: 4px;">
+                        <path d="M0,18 Q25,12 50,14 T100,4" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="100" cy="4" r="3" fill="#e11d48"/>
+                    </svg>
+                </div>
+                """
+            )
+        with sc2:
+            render_html(
+                f"""
+                <div class="env-glass-card">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 800; color: #64748b;">
+                        <span>💧 Humidity</span>
+                    </div>
+                    <div>
+                        <div style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; font-weight: 900; color: #0284c7; margin-top: 4px;">
+                            {reading.humidity_pct:.0f}%
+                        </div>
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #0284c7; margin-top: 2px;">
+                            → Stable
+                        </div>
+                    </div>
+                    <svg viewBox="0 0 100 24" style="width: 100%; height: 24px; margin-top: 4px;">
+                        <path d="M0,12 Q25,15 50,12 T100,10" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="100" cy="10" r="3" fill="#0284c7"/>
+                    </svg>
+                </div>
+                """
+            )
+        with sc3:
+            render_html(
+                f"""
+                <div class="env-glass-card">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 800; color: #64748b;">
+                        <span>💨 Gas / VOC</span>
+                    </div>
+                    <div>
+                        <div style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; font-weight: 900; color: #8b5cf6; margin-top: 4px;">
+                            {reading.gas_ppm:.0f} ppm
+                        </div>
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #8b5cf6; margin-top: 2px;">
+                            ↑ Rising
+                        </div>
+                    </div>
+                    <svg viewBox="0 0 100 24" style="width: 100%; height: 24px; margin-top: 4px;">
+                        <path d="M0,20 Q30,16 60,10 T100,2" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="100" cy="2" r="3" fill="#8b5cf6"/>
+                    </svg>
+                </div>
+                """
+            )
 
-    with sc3:
-        gas_color = "#f43f5e" if reading.gas_ppm > 180 else "#10b981"
-        gas_trend = "↑ Rising" if reading.gas_ppm > 150 else "→ Baseline"
-        render_html(
-            f"""<div class="sensor-box-card"><div style="font-size: 1.3rem; margin-bottom: 2px;">💨</div><div class="sensor-value-text" style="color: {gas_color};">{reading.gas_ppm:.0f} ppm</div><div class="sensor-label-text">Gas / VOC</div><div style="font-size: 0.72rem; font-weight: 700; color: {'#f87171' if 'Rising' in gas_trend else '#34d399'}; margin-top: 4px;">{gas_trend}</div></div>"""
-        )
+    st.session_state["_bottom_col2"] = b_col2
 
 
 def render_freshsense_ai_analysis(results: List[FoodFreshnessResult]):
     """
-    Renders the AI-style analysis section:
-    FRESHSENSE ANALYSIS
-    "Tomatoes are showing increasing spoilage indicators. Temperature and gas readings have increased over the recent monitoring period."
-    Prediction confidence: 87%
+    Renders the Right column of the bottom row (FRESHSENSE ANALYSIS):
+    - Holographic glowing 3D AI sphere, biological explanation quote, and confidence progress bar.
     """
     tomato_item = next((r for r in results if r.food_id == "tomato"), results[0])
-    render_html(
-        f"""<div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 18px; padding: 18px 20px; margin: 18px 0 10px 0;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><div style="font-size: 0.85rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: #34d399;">🤖 FRESHSENSE ANALYSIS</div><span style="font-size: 0.78rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.35);">Prediction confidence: {tomato_item.ai_confidence_pct}%</span></div><div style="font-size: 0.92rem; color: #f1f5f9; line-height: 1.5; margin-bottom: 8px;">"{tomato_item.food_name} are showing increasing spoilage indicators. Temperature and gas readings have increased over the recent monitoring period."</div><div style="font-size: 0.75rem; color: #94a3b8;">Estimated based on current sensor trends and calibrated biological decay kinetics.</div></div>"""
-    )
 
+    b_col2 = st.session_state.pop("_bottom_col2", None)
+    target_container = b_col2 if b_col2 is not None else st.container()
+
+    with target_container:
+        render_html(
+            """
+            <div style="display: flex; align-items: center; gap: 8px; margin: 18px 0 10px 0;">
+                <span style="font-size: 1.05rem;">🧠</span>
+                <span style="font-size: 0.88rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: #0284c7;">FRESHSENSE ANALYSIS</span>
+            </div>
+            """
+        )
+        render_html(
+            f"""
+            <div class="ai-analysis-reference-card">
+                <div class="ai-orb-hologram">
+                    <img src="{AI_ORB_B64}" alt="FreshSense AI Neural Core" />
+                </div>
+                <div style="flex-grow: 1;">
+                    <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; line-height: 1.45; margin-bottom: 10px;">
+                        "{tomato_item.food_name} are showing increasing spoilage indicators. Temperature and gas readings have increased over the recent monitoring period."
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="font-size: 0.76rem; font-weight: 800; color: #059669; white-space: nowrap;">Prediction confidence</div>
+                        <div style="flex-grow: 1; height: 7px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
+                            <div style="height: 100%; width: {tomato_item.ai_confidence_pct}%; background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%); border-radius: 999px;"></div>
+                        </div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; font-weight: 900; color: #059669;">{tomato_item.ai_confidence_pct}%</div>
+                    </div>
+                </div>
+            </div>
+            """
+        )
+
+
+# -----------------------------------------------------------------------------
+# 5. Food Detail View (Deep-Dive Analysis & Gemini Vision Copilot)
+# -----------------------------------------------------------------------------
 
 def render_food_detail_view(result: FoodFreshnessResult, reading: SensorReading, on_back: Callable[[], None], analyze_gemini_fn: Optional[Callable] = None):
-    """Renders the dedicated food detail page with deep-dive analysis and AI vision recipe copilot."""
+    """Renders the dedicated Food Detail Screen with deep sensor diagnostics and Gemini AI vision."""
     profile = get_food_profile(result.food_id)
 
     if st.button("← Back to Dashboard", key="btn_back_to_dash"):
         on_back()
         return
 
-    render_html(
-        f"""<div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(20, 30, 55, 0.9) 100%); border: 1.5px solid {result.status_color}; border-radius: 22px; padding: 22px; margin: 12px 0 18px 0; box-shadow: 0 0 30px {result.status_bg};"><div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;"><div style="display: flex; align-items: center; gap: 16px;"><span style="font-size: 3.2rem;">{result.icon}</span><div><div style="display: flex; align-items: center; gap: 10px;"><h1 style="margin: 0; font-size: 2rem; font-weight: 900; color: #ffffff;">{result.food_name}</h1><span style="background: {result.status_bg}; color: {result.status_color}; border: 1px solid {result.status_color}; font-size: 0.8rem; font-weight: 800; padding: 3px 10px; border-radius: 999px;">{result.status}</span></div><p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #94a3b8;">Category: <strong>{result.category}</strong> • Storage Zone: <strong>{profile.ideal_storage_location}</strong></p></div></div><div style="text-align: right; background: rgba(0,0,0,0.35); padding: 10px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);"><div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">FRESHNESS SCORE</div><div style="font-size: 2rem; font-weight: 900; color: {result.status_color}; font-family: 'JetBrains Mono', monospace;">{result.freshness_score:.0f}<span style="font-size: 1rem; color: #64748b;">/100</span></div><div style="font-size: 0.8rem; color: #cbd5e1;">Est: <strong>{result.estimated_remaining_str}</strong></div></div></div></div>"""
-    )
+    # Header Row
+    top_col1, top_col2 = st.columns([1.3, 1])
+    with top_col1:
+        img_src = FOOD_IMAGES.get(result.food_id)
+        if img_src:
+            visual_html = f'<div style="width: 80px; height: 80px; flex-shrink: 0;"><img src="{img_src}" alt="{result.food_name}" style="max-width:100%; max-height:100%; object-fit:contain;" /></div>'
+        else:
+            visual_html = f'<span style="font-size: 3.5rem;">{result.icon}</span>'
 
-    dcol1, dcol2 = st.columns(2)
-
-    with dcol1:
-        st.markdown("#### 📊 WHY? (Sensor Breakdown)")
         render_html(
-            f"""<div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 16px;"><div style="margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 700;"><span>🌡️ Temperature</span><span style="color: {'#f43f5e' if reading.temperature_c > profile.optimal_temp_c[1] else '#10b981'};">{reading.temperature_c:.1f}°C</span></div><div style="font-size: 0.76rem; color: #94a3b8;">Preferred: {profile.optimal_temp_c[0]}°C – {profile.optimal_temp_c[1]}°C ({result.temp_status})</div></div><div style="margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 700;"><span>💧 Humidity</span><span style="color: {'#f59e0b' if reading.humidity_pct > profile.optimal_humidity_pct[1] else '#10b981'};">{reading.humidity_pct:.1f}%</span></div><div style="font-size: 0.76rem; color: #94a3b8;">Preferred: {profile.optimal_humidity_pct[0]}% – {profile.optimal_humidity_pct[1]}% ({result.humidity_status})</div></div><div style="margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 700;"><span>💨 Gas / VOC</span><span style="color: {'#f43f5e' if reading.gas_ppm > 150 else '#10b981'};">{reading.gas_ppm:.0f} ppm</span></div><div style="font-size: 0.76rem; color: #94a3b8;">Status: {result.gas_status}</div></div><hr style="margin: 12px 0; border-color: rgba(255,255,255,0.06);"><div style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.45;"><strong>FRESHSENSE EXPLANATION:</strong><br>{result.primary_reason}</div><div style="margin-top: 8px; font-size: 0.84rem; color: #34d399;">💡 <strong>RECOMMENDED ACTION:</strong><br>{result.recommended_action}</div></div>"""
+            f"""
+            <div style="display: flex; align-items: center; gap: 18px; margin: 12px 0 16px 0;">
+                {visual_html}
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h1 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: #0a1024;">{result.food_name}</h1>
+                        <span class="badge-pill-risk" style="font-size: 0.82rem; padding: 4px 12px;">{result.status}</span>
+                    </div>
+                    <p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #64748b;">Storage Zone: <strong>{profile.ideal_storage_location}</strong> • Optimal: <strong>{profile.optimal_temp_c[0]}°C–{profile.optimal_temp_c[1]}°C</strong></p>
+                </div>
+            </div>
+            """
+        )
+    with top_col2:
+        render_html(
+            f"""
+            <div style="background: rgba(255, 255, 255, 0.95); border: 1.5px solid rgba(255,255,255,0.95); border-radius: 22px; padding: 14px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 18px;">
+                <div style="position: relative; width: 70px; height: 70px; flex-shrink: 0;">
+                    <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" stroke-width="3.5" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="{result.status_color}" stroke-width="3.5" stroke-dasharray="{result.freshness_score}, 100" stroke-linecap="round" />
+                    </svg>
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: {result.status_color};">{result.freshness_score:.0f}%</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Freshness Score</div>
+                    <div style="font-size: 1.15rem; font-weight: 900; color: #0a1024;">{result.estimated_remaining_str}</div>
+                </div>
+            </div>
+            """
         )
 
-    with dcol2:
+    # Middle Row: Freshness Timeline & Why Sensor Breakdown
+    m_left, m_right = st.columns([1.5, 1], gap="medium")
+
+    with m_left:
         st.markdown("#### 📈 Freshness Timeline (48 Hours)")
         timeline_df = HistoryService.get_food_timeline(result.food_id, result.freshness_score)
         
@@ -249,42 +488,91 @@ def render_food_detail_view(result: FoodFreshnessResult, reading: SensorReading,
             x=timeline_df["time"],
             y=timeline_df["freshness_score"],
             mode="lines+markers",
-            line=dict(color=result.status_color, width=3),
-            marker=dict(size=6, color="#ffffff"),
+            line=dict(color=result.status_color, width=3.5),
+            marker=dict(size=7, color="#0a1024"),
             name="Freshness Score",
             fill="tozeroy",
-            fillcolor=result.status_bg,
+            fillcolor="rgba(244, 63, 94, 0.12)" if result.freshness_score < 75 else "rgba(16, 185, 129, 0.12)",
         ))
-        fig.add_hline(y=80, line_dash="dash", line_color="rgba(16, 185, 129, 0.4)", annotation_text="Fresh (80+)")
-        fig.add_hline(y=60, line_dash="dash", line_color="rgba(245, 158, 11, 0.4)", annotation_text="Monitor (60)")
-        fig.add_hline(y=30, line_dash="dash", line_color="rgba(239, 68, 68, 0.4)", annotation_text="At Risk (30)")
+        fig.add_hline(y=80, line_dash="dash", line_color="#10b981", annotation_text="Fresh (80+)")
+        fig.add_hline(y=60, line_dash="dash", line_color="#f59e0b", annotation_text="Monitor (60)")
+        fig.add_hline(y=30, line_dash="dash", line_color="#f43f5e", annotation_text="At Risk (30)")
         
         fig.update_layout(
-            height=250,
+            height=260,
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(15, 23, 42, 0.5)",
+            plot_bgcolor="rgba(255,255,255,0.7)",
             margin=dict(l=10, r=10, t=20, b=20),
-            yaxis=dict(range=[0, 105], gridcolor="rgba(255,255,255,0.05)"),
-            xaxis=dict(gridcolor="rgba(255,255,255,0.05)"),
-            font=dict(color="#94a3b8"),
+            yaxis=dict(range=[0, 105], gridcolor="rgba(0,0,0,0.05)", tickfont=dict(color="#64748b")),
+            xaxis=dict(gridcolor="rgba(0,0,0,0.05)", tickfont=dict(color="#64748b")),
+            font=dict(color="#334155", family="Plus Jakarta Sans"),
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    # Multimodal AI Vision & Zero-Waste Culinary Copilot
+    with m_right:
+        st.markdown("#### 📊 Why? (Sensor Status)")
+        render_html(
+            f"""
+            <div style="background: rgba(255,255,255,0.92); border: 1.5px solid rgba(255,255,255,0.95); border-radius: 20px; padding: 16px 18px; box-shadow: 0 6px 20px rgba(0,0,0,0.04);">
+                <div style="margin-bottom: 10px;">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #64748b;">🌡️ Temperature</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 900; color: #e11d48;">{reading.temperature_c:.1f}°C</div>
+                    <div style="font-size: 0.74rem; color: #64748b;">{result.temp_status}</div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #64748b;">💧 Humidity</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 900; color: #0284c7;">{reading.humidity_pct:.0f}%</div>
+                    <div style="font-size: 0.74rem; color: #64748b;">{result.humidity_status}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #64748b;">💨 Gas / VOC</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 900; color: #8b5cf6;">{reading.gas_ppm:.0f} ppm</div>
+                    <div style="font-size: 0.74rem; color: #64748b;">{result.gas_status}</div>
+                </div>
+            </div>
+            """
+        )
+
+    # Bottom Row: Explanation & Recommended Action
+    b1, b2 = st.columns(2)
+    with b1:
+        render_html(
+            f"""
+            <div style="background: rgba(255,255,255,0.92); border: 1.5px solid #a7f3d0; border-radius: 20px; padding: 16px 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.03);">
+                <div style="font-weight: 800; color: #047857; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span>🤖 FreshSense Explanation</span>
+                </div>
+                <div style="font-size: 0.88rem; color: #334155; line-height: 1.45;">{result.primary_reason}</div>
+            </div>
+            """
+        )
+    with b2:
+        render_html(
+            f"""
+            <div style="background: rgba(255,255,255,0.92); border: 1.5px solid #fde68a; border-radius: 20px; padding: 16px 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.03);">
+                <div style="font-weight: 800; color: #b45309; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span>💡 Recommended Action</span>
+                </div>
+                <div style="font-size: 0.88rem; color: #334155; line-height: 1.45;">{result.recommended_action}</div>
+            </div>
+            """
+        )
+
+    # Multimodal Vision & Recipe Copilot
     st.markdown("---")
-    st.markdown(f"### 📸 Multimodal AI Vision & Zero-Waste Culinary Copilot for {result.food_name}")
+    st.markdown(f"### 📸 Multimodal AI Vision & Zero-Waste Recipes for {result.food_name}")
     st.caption("Inspect physical surface features and generate zero-waste culinary recipes.")
 
     vcol1, vcol2 = st.columns(2)
     with vcol1:
-        cam_photo = st.camera_input("Take a photo with webcam", key=f"cam_detail_{result.food_id}")
-        up_photo = st.file_uploader("Or upload image file", type=["jpg", "jpeg", "png"], key=f"up_detail_{result.food_id}")
+        cam_photo = st.camera_input("Capture with webcam", key=f"cam_ref_{result.food_id}")
+        up_photo = st.file_uploader("Or upload photo", type=["jpg", "jpeg", "png"], key=f"up_ref_{result.food_id}")
         selected_photo = cam_photo or up_photo
 
     with vcol2:
         if selected_photo is not None and analyze_gemini_fn is not None:
-            if st.button("🚀 Analyze Food Snapshot & Generate Recipes", type="primary", key="btn_run_gemini_detail"):
-                with st.spinner("Analyzing surface features & correlating with IoT telemetry..."):
+            if st.button("🚀 Analyze Food Surface & Generate Recipes", type="primary", key="btn_gemini_ref", use_container_width=True):
+                with st.spinner("Analyzing surface features & IoT telemetry..."):
                     img_bytes = selected_photo.getvalue()
                     res = analyze_gemini_fn(
                         image_bytes=img_bytes,
@@ -293,7 +581,6 @@ def render_food_detail_view(result: FoodFreshnessResult, reading: SensorReading,
                         gas_ppm=reading.gas_ppm,
                         freshness_score=result.freshness_score
                     )
-                    
                     if "error" in res:
                         st.error(res["message"])
                     else:
@@ -310,54 +597,116 @@ def render_food_detail_view(result: FoodFreshnessResult, reading: SensorReading,
             st.info("💡 Capture or upload an image to run the multimodal visual inspection.")
 
 
+# -----------------------------------------------------------------------------
+# 6. Notification Center (Alerts Screen)
+# -----------------------------------------------------------------------------
+
 def render_notification_center(manager: NotificationManager, on_view_food: Callable[[str], None]):
-    """Renders the interactive alert center with filters, read tracking, and food links."""
+    """Renders the Alerts Screen with clean severity cards and mark-all-read controls."""
     render_html(
-        """<div style="margin-bottom: 16px;"><h2 style="margin: 0; font-size: 1.75rem; font-weight: 900; color: #ffffff;">🔔 Notification Center</h2><p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #94a3b8;">Real-time food freshness alerts and container state transitions.</p></div>"""
+        """
+        <div style="margin-bottom: 16px;">
+            <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: #0a1024;">🔔 Notification Center</h2>
+            <p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #64748b;">Real-time food freshness alerts and container state transitions.</p>
+        </div>
+        """
     )
 
-    fcol1, fcol2, fcol3 = st.columns([2, 1, 1])
-    with fcol1:
-        category = st.radio("Category", ["All", "Critical", "Warning", "Info"], horizontal=True, label_visibility="collapsed")
-    with fcol2:
-        if st.button("✓ Mark All Read", use_container_width=True):
-            manager.mark_all_as_read()
-            st.rerun()
-    with fcol3:
-        if st.button("🗑️ Clear Alerts", use_container_width=True):
-            manager.clear_all()
-            st.rerun()
+    al_left, al_right = st.columns([3.2, 1.2], gap="large")
 
-    filtered = manager.get_filtered(category)
-    if not filtered:
-        st.info("✨ No active alerts found in this category.")
-        return
+    with al_left:
+        fcol1, fcol2, fcol3 = st.columns([2.5, 1, 1])
+        with fcol1:
+            category = st.radio("Category", ["All", "Critical", "Warning", "Info"], horizontal=True, label_visibility="collapsed")
+        with fcol2:
+            if st.button("✓ Mark Read", use_container_width=True):
+                manager.mark_all_as_read()
+                st.rerun()
+        with fcol3:
+            if st.button("🗑️ Clear", use_container_width=True):
+                manager.clear_all()
+                st.rerun()
 
-    for n in filtered:
-        item_class = "notif-item " + (
-            "notif-critical" if n.severity == "CRITICAL" else ("notif-warning" if n.severity == "WARNING" else "notif-info")
+        filtered = manager.get_filtered(category)
+        if not filtered:
+            st.info("✨ No active alerts found in this category.")
+        else:
+            for n in filtered:
+                item_bg = "linear-gradient(135deg, rgba(255, 241, 242, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%)" if n.severity == "CRITICAL" else ("linear-gradient(135deg, rgba(254, 252, 232, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%)" if n.severity == "WARNING" else "linear-gradient(135deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%)")
+                border_col = "#fda4af" if n.severity == "CRITICAL" else ("#fde68a" if n.severity == "WARNING" else "#a7f3d0")
+                tag_col = "#e11d48" if n.severity == "CRITICAL" else ("#d97706" if n.severity == "WARNING" else "#059669")
+
+                ncol1, ncol2 = st.columns([3.8, 1.2])
+                with ncol1:
+                    render_html(
+                        f"""
+                        <div style="background: {item_bg}; border: 1.5px solid {border_col}; border-radius: 20px; padding: 16px 20px; margin-bottom: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.03);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 1.4rem;">{n.food_icon}</span>
+                                    <span style="font-size: 0.74rem; font-weight: 900; text-transform: uppercase; color: {tag_col};">{n.severity} RISK</span>
+                                    <strong style="color: #0a1024; font-size: 1rem;">{n.title}</strong>
+                                    {' <span style="background: #e11d48; color: white; font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 999px;">UNREAD</span>' if not n.is_read else ''}
+                                </div>
+                                <div style="font-size: 0.76rem; color: #64748b;">{n.formatted_time}</div>
+                            </div>
+                            <div style="font-size: 0.86rem; color: #334155; margin-bottom: 4px;">{n.message}</div>
+                            <div style="font-size: 0.8rem; color: #059669; font-weight: 700;">💡 {n.recommended_action}</div>
+                        </div>
+                        """
+                    )
+                with ncol2:
+                    render_html("<div style='margin-top: 14px;'></div>")
+                    if st.button(f"View {n.food_name}", key=f"btn_alerts_view_{n.id}", use_container_width=True):
+                        manager.mark_as_read(n.id)
+                        on_view_food(n.food_id)
+
+    with al_right:
+        render_html(
+            """
+            <div style="background: rgba(255, 255, 255, 0.92); border: 1.5px solid rgba(255, 255, 255, 0.95); border-radius: 24px; padding: 22px 18px; text-align: center; box-shadow: 0 12px 32px rgba(0, 210, 255, 0.15); margin-top: 36px;">
+                <div style="font-size: 3.5rem; margin-bottom: 6px;">🫑</div>
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #047857; font-weight: 800; font-size: 0.82rem; padding: 4px 12px; border-radius: 999px; border: 1px solid #a7f3d0; margin-bottom: 8px;">
+                    ✓ Your food is safer now!
+                </div>
+                <div style="font-size: 0.78rem; color: #64748b; line-height: 1.4;">
+                    Continuous AI monitoring keeps spoilage risk minimized.
+                </div>
+            </div>
+            """
         )
-        ncol1, ncol2 = st.columns([4, 1])
-        with ncol1:
-            render_html(
-                f"""<div class="{item_class}"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.3rem;">{n.food_icon}</span><strong style="color: #ffffff; font-size: 1rem;">{n.title}</strong>{' <span style="background: #f43f5e; color: white; font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 999px;">UNREAD</span>' if not n.is_read else ''}</div><div style="font-size: 0.78rem; color: #94a3b8;">{n.formatted_time}</div></div><div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px;">{n.message}</div><div style="font-size: 0.8rem; color: #10b981;">💡 <strong>Recommended:</strong> {n.recommended_action}</div></div>"""
-            )
-        with ncol2:
-            render_html("<div style='margin-top: 10px;'></div>")
-            if st.button(f"View {n.food_name}", key=f"btn_notif_view_{n.id}", use_container_width=True):
-                manager.mark_as_read(n.id)
-                on_view_food(n.food_id)
 
+
+# -----------------------------------------------------------------------------
+# 7. Analytics Dashboard
+# -----------------------------------------------------------------------------
 
 def render_analytics_dashboard(reading: SensorReading):
-    """Renders historical analytics with interactive multi-sensor charts."""
+    """Renders historical analytics with interactive charts and status distribution."""
     render_html(
-        """<div style="margin-bottom: 18px;"><h2 style="margin: 0; font-size: 1.75rem; font-weight: 900; color: #ffffff;">📈 Storage History & Kinetics Analytics</h2><p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #94a3b8;">Telemetry history and multi-sensor correlation analysis.</p></div>"""
+        """
+        <div style="margin-bottom: 16px;">
+            <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: #0a1024;">📈 Storage History & Kinetics Analytics</h2>
+            <p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #64748b;">Telemetry history and multi-sensor correlation analysis.</p>
+        </div>
+        """
     )
 
-    tframe = st.radio("Time Window", ["24 Hours", "7 Days", "30 Days"], horizontal=True)
-    tf_map = {"24 Hours": "24h", "7 Days": "7d", "30 Days": "30d"}
-    
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        render_html("""<div class="env-glass-card"><div style="font-size: 0.74rem; font-weight: 800; color: #059669; text-transform: uppercase;">Freshness Score</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 1.65rem; font-weight: 900; color: #065f46; margin: 4px 0 2px 0;">78%</div><div style="font-size: 0.72rem; color: #059669; font-weight: 700;">↑ +2% nominal</div></div>""")
+    with m2:
+        render_html("""<div class="env-glass-card"><div style="font-size: 0.74rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">Sensor Stability</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 1.65rem; font-weight: 900; color: #075985; margin: 4px 0 2px 0;">96%</div><div style="font-size: 0.72rem; color: #0284c7; font-weight: 700;">↑ +4% high fidelity</div></div>""")
+    with m3:
+        render_html("""<div class="env-glass-card"><div style="font-size: 0.74rem; font-weight: 800; color: #7c3aed; text-transform: uppercase;">Foods Monitored</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 1.65rem; font-weight: 900; color: #5b21b6; margin: 4px 0 2px 0;">6</div><div style="font-size: 0.72rem; color: #7c3aed; font-weight: 700;">● Stable tracking</div></div>""")
+    with m4:
+        render_html("""<div class="env-glass-card"><div style="font-size: 0.74rem; font-weight: 800; color: #e11d48; text-transform: uppercase;">Risk Detected</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 1.65rem; font-weight: 900; color: #9f1239; margin: 4px 0 2px 0;">2</div><div style="font-size: 0.72rem; color: #e11d48; font-weight: 700;">⚠ Requires attention</div></div>""")
+
+    render_html("<div style='margin-top: 14px;'></div>")
+
+    tframe = st.radio("Time Window", ["24H", "7D", "30D"], horizontal=True)
+    tf_map = {"24H": "24h", "7D": "7d", "30D": "30d"}
+
     df = HistoryService.get_history_dataframe(
         timeframe=tf_map[tframe],
         current_temp=reading.temperature_c,
@@ -365,120 +714,177 @@ def render_analytics_dashboard(reading: SensorReading):
         current_gas=reading.gas_ppm
     )
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df["time_label"], y=df["freshness_score"], name="Overall Freshness", line=dict(color="#10b981", width=3), yaxis="y1"))
-    fig.add_trace(go.Scatter(x=df["time_label"], y=df["gas_ppm"], name="MQ-135 Gas (ppm)", line=dict(color="#f43f5e", width=2, dash="dot"), yaxis="y2"))
-    fig.add_trace(go.Scatter(x=df["time_label"], y=df["temperature_c"], name="Temperature (°C)", line=dict(color="#f59e0b", width=2), yaxis="y3"))
+    c_left, c_right = st.columns([1.8, 1.2], gap="medium")
 
-    fig.update_layout(
-        height=340,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(15, 23, 42, 0.6)",
-        margin=dict(l=10, r=10, t=30, b=20),
-        font=dict(color="#94a3b8"),
-        xaxis=dict(gridcolor="rgba(255,255,255,0.05)"),
-        yaxis=dict(title="Freshness Score", gridcolor="rgba(255,255,255,0.05)", range=[0, 105]),
-        yaxis2=dict(title="Gas PPM", overlaying="y", side="right", showgrid=False),
-        yaxis3=dict(title="Temp (°C)", overlaying="y", side="right", position=0.95, showgrid=False),
-        legend=dict(orientation="h", y=1.12, x=0.1),
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    with c_left:
+        st.markdown("#### Freshness Trend")
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df["time_label"], y=df["freshness_score"], name="Tomatoes", line=dict(color="#f43f5e", width=3), fill="tozeroy", fillcolor="rgba(244, 63, 94, 0.08)"))
+        fig.add_trace(go.Scatter(x=df["time_label"], y=[min(100, v + 22) for v in df["freshness_score"]], name="Lemon", line=dict(color="#10b981", width=2.5)))
+        fig.add_trace(go.Scatter(x=df["time_label"], y=[min(100, v + 9) for v in df["freshness_score"]], name="Bell Pepper", line=dict(color="#06b6d4", width=2.5)))
 
+        fig.update_layout(
+            height=300,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(255,255,255,0.7)",
+            margin=dict(l=10, r=10, t=30, b=20),
+            font=dict(color="#334155", family="Plus Jakarta Sans"),
+            xaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
+            yaxis=dict(title="Score", gridcolor="rgba(0,0,0,0.05)", range=[0, 105]),
+            legend=dict(orientation="h", y=1.14, x=0.05),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with c_right:
+        st.markdown("#### Food Status Breakdown")
+        donut_fig = go.Figure(data=[go.Pie(
+            labels=["Fresh", "Monitor", "At Risk", "Critical"],
+            values=[3, 2, 1, 0],
+            hole=0.6,
+            marker=dict(colors=["#10b981", "#f59e0b", "#f43f5e", "#881337"]),
+            textinfo="value",
+            hoverinfo="label+percent"
+        )])
+        donut_fig.update_layout(
+            height=300,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=10, r=10, t=10, b=10),
+            font=dict(color="#334155", family="Plus Jakarta Sans"),
+            showlegend=True,
+            legend=dict(orientation="h", y=-0.1)
+        )
+        st.plotly_chart(donut_fig, use_container_width=True)
+
+
+# -----------------------------------------------------------------------------
+# 8. Simulation Sandbox
+# -----------------------------------------------------------------------------
 
 def render_simulation_sandbox(sim_provider: SimulationSensorProvider, on_apply: Callable[[], None]):
-    """
-    Renders the simulation controls including the RAPID SPOILAGE DEMO:
-    - ⚡ RAPID SPOILAGE DEMO (Step 1: 94% FRESH -> Step 2: 76% MONITOR -> Step 3: 48% AT RISK -> Step 4: 24% CRITICAL)
-    - Scenario Presets (Fresh Baseline, Normal Storage, Warning, Rapid Decay, Critical)
-    - Manual Sliders
-    """
+    """Renders the Simulation Mode Sandbox with RAPID SPOILAGE DEMO and presets."""
     render_html(
-        """<div style="margin-bottom: 18px;"><h2 style="margin: 0; font-size: 1.75rem; font-weight: 900; color: #ffffff;">🎮 Simulation Mode Sandbox</h2><p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #94a3b8;">Demonstrate real-time decay kinetics and alerts with zero physical hardware attached.</p></div>"""
+        """
+        <div style="margin-bottom: 16px;">
+            <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: #0a1024;">Simulation Mode</h2>
+            <div style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 800; color: #047857; background: #ecfdf5; border: 1.5px solid #a7f3d0; padding: 2px 10px; border-radius: 999px; margin-top: 4px;">
+                <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981;"></span> Running Simulation Core
+            </div>
+        </div>
+        """
     )
 
-    # ⚡ RAPID SPOILAGE DEMO SECTION
-    render_html(
-        """<div style="background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 18px; padding: 18px; margin-bottom: 22px;"><div style="font-size: 1.1rem; font-weight: 900; color: #fca5a5; margin-bottom: 6px;">⚡ RAPID SPOILAGE DEMONSTRATION</div><div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 14px;">Step through the complete spoilage timeline for <strong>🍅 Tomatoes</strong> and observe sensor shifts, freshness degradation, and triggered notifications:</div></div>"""
-    )
+    s_left, s_right = st.columns([1.6, 1.4], gap="large")
 
-    step_cols = st.columns(4)
-    for idx, sdata in enumerate(sim_provider.SPOILAGE_STEPS):
-        with step_cols[idx]:
-            btn_type = "primary" if sim_provider.preset_key == f"spoilage_step_{idx+1}" else "secondary"
-            if st.button(f"Step {idx+1}\n{sdata['status']}", key=f"btn_step_{idx+1}", type=btn_type, use_container_width=True):
-                sim_provider.apply_spoilage_step(idx)
+    with s_left:
+        st.markdown("#### Preset Scenarios")
+        p_cols = st.columns(5)
+        p_keys = ["fresh_baseline", "normal_storage", "warning_temp", "rapid_spoilage", "critical_alert"]
+        p_labels = ["Fresh", "Normal", "Warning", "Rapid Spoilage", "Critical"]
+        
+        for idx, k in enumerate(p_keys):
+            with p_cols[idx]:
+                is_sel = (sim_provider.preset_key == k)
+                if st.button(p_labels[idx], key=f"btn_p_ref_{k}", type="primary" if is_sel else "secondary", use_container_width=True):
+                    sim_provider.apply_preset(k)
+                    on_apply()
+                    st.rerun()
+
+        st.markdown("---")
+        st.markdown("#### Manual Sensor Overrides")
+        curr = sim_provider.get_current_reading()
+        t = st.slider("Temperature (°C)", 1.0, 45.0, float(curr.temperature_c), 0.5)
+        h = st.slider("Humidity (%)", 20.0, 98.0, float(curr.humidity_pct), 1.0)
+        g = st.slider("Gas / VOC (ppm)", 10.0, 800.0, float(curr.gas_ppm), 5.0)
+
+        bcol1, bcol2, bcol3 = st.columns(3)
+        with bcol1:
+            if st.button("▶ START", type="primary", use_container_width=True):
+                sim_provider.set_reading(t, h, g, curr.hours_elapsed)
+                on_apply()
+                st.rerun()
+        with bcol2:
+            if st.button("⏸ PAUSE", use_container_width=True):
+                st.info("Simulation paused.")
+        with bcol3:
+            if st.button("🔄 RESET", use_container_width=True):
+                sim_provider.apply_preset("fresh_baseline")
                 on_apply()
                 st.rerun()
 
-    # Show active step description if active
-    if sim_provider.preset_key.startswith("spoilage_step_"):
-        step_num = int(sim_provider.preset_key.split("_")[-1])
-        active_step = sim_provider.SPOILAGE_STEPS[step_num - 1]
-        st.success(f"**Active Step {step_num}: {active_step['label']}** — {active_step['description']}")
+    with s_right:
+        render_html(
+            """
+            <div style="background: rgba(255, 255, 255, 0.95); border: 1.5px solid rgba(255, 255, 255, 0.95); border-radius: 24px; padding: 20px; box-shadow: 0 12px 32px rgba(0, 210, 255, 0.12); margin-bottom: 12px;">
+                <div style="font-size: 1.05rem; font-weight: 900; color: #0284c7; margin-bottom: 4px;">⚡ RAPID SPOILAGE DEMO</div>
+                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;">Watch how freshness changes over time for <strong>🍅 Tomatoes</strong>:</div>
+            </div>
+            """
+        )
 
-    st.markdown("---")
-    st.markdown("#### 📦 Standard Scenario Presets")
+        for idx, sdata in enumerate(sim_provider.SPOILAGE_STEPS):
+            is_active = (sim_provider.preset_key == f"spoilage_step_{idx+1}")
+            btn_type = "primary" if is_active else "secondary"
+            rcol1, rcol2 = st.columns([3.5, 1.5])
+            with rcol1:
+                st_color = "#10b981" if idx == 0 else ("#f59e0b" if idx == 1 else ("#f43f5e" if idx == 2 else "#881337"))
+                render_html(
+                    f"""
+                    <div style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.85); border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; padding: 8px 14px; margin-bottom: 8px;">
+                        <span style="font-size: 1.6rem;">🍅</span>
+                        <div>
+                            <div style="font-size: 0.86rem; font-weight: 900; color: {st_color};">{sdata['label']}</div>
+                            <div style="font-size: 0.74rem; color: #64748b;">{sdata['status']} • {sdata['temp_c']}°C • {sdata['gas_ppm']} ppm</div>
+                        </div>
+                    </div>
+                    """
+                )
+            with rcol2:
+                if st.button(f"Step {idx+1}", key=f"btn_step_ref_{idx+1}", type=btn_type, use_container_width=True):
+                    sim_provider.apply_spoilage_step(idx)
+                    on_apply()
+                    st.rerun()
 
-    preset_keys = list(sim_provider.PRESETS.keys())
-    preset_names = [sim_provider.PRESETS[k]["name"] for k in preset_keys]
-    
-    current_idx = 0
-    if sim_provider.preset_key in preset_keys:
-        current_idx = preset_keys.index(sim_provider.preset_key)
 
-    chosen = st.radio("Select Scenario Preset", preset_names, index=current_idx)
-    sel_key = preset_keys[preset_names.index(chosen)]
-    
-    st.info(f"ℹ️ {sim_provider.PRESETS[sel_key]['description']}")
-    
-    if st.button("⚡ Apply Selected Scenario", type="primary", use_container_width=True):
-        sim_provider.apply_preset(sel_key)
-        on_apply()
-        st.success(f"Applied: {chosen}")
-        st.rerun()
-
-    st.markdown("---")
-    st.markdown("#### 🎛️ Manual Slider Overrides")
-    curr = sim_provider.get_current_reading()
-    
-    c1, c2 = st.columns(2)
-    with c1:
-        t = st.slider("Temperature (°C)", 1.0, 45.0, float(curr.temperature_c), 0.5)
-        h = st.slider("Humidity (%)", 20.0, 98.0, float(curr.humidity_pct), 1.0)
-    with c2:
-        g = st.slider("Gas / VOC (ppm)", 10.0, 800.0, float(curr.gas_ppm), 5.0)
-        hrs = st.slider("Storage Exposure (hrs)", 0.0, 120.0, float(curr.hours_elapsed), 1.0)
-
-    if st.button("Apply Custom Values", use_container_width=True):
-        sim_provider.set_reading(t, h, g, hrs)
-        on_apply()
-        st.success("Custom values applied!")
-        st.rerun()
-
+# -----------------------------------------------------------------------------
+# 9. Settings Page
+# -----------------------------------------------------------------------------
 
 def render_settings_page(reading: SensorReading):
-    """Renders settings, alert threshold preferences, and hardware specs."""
-    st.markdown("## ⚙️ Settings & Device Specs")
+    """Renders Settings and Device Specifications."""
+    st.markdown("## ⚙️ Settings & Container Configuration")
     
-    st.markdown("### 📦 Hardware Container Node")
-    d1, d2, d3 = st.columns(3)
-    with d1:
-        st.metric("Device Name", reading.device_name)
-    with d2:
-        st.metric("Battery Level", f"{reading.battery_pct:.0f}%")
-    with d3:
-        st.metric("Operating Mode", "Simulation Telemetry")
+    sc1, sc2 = st.columns(2, gap="medium")
+    with sc1:
+        st.markdown("### 📦 Hardware Node Configuration")
+        render_html(
+            f"""
+            <div class="env-glass-card">
+                <div style="font-size: 0.8rem; font-weight: 800; color: #64748b;">DEVICE NAME</div>
+                <div style="font-size: 1.2rem; font-weight: 900; color: #0a1024; margin-bottom: 8px;">{reading.device_name}</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.84rem; color: #334155;">
+                    <span>Battery Level: <strong>{reading.battery_pct:.0f}%</strong></span>
+                    <span>Signal: <strong>{reading.signal_strength_dbm} dBm</strong></span>
+                </div>
+            </div>
+            """
+        )
+        st.markdown("---")
+        st.markdown("### 🔔 Notification Thresholds")
+        st.checkbox("🚨 High Priority Alerts (Score < 50%)", value=True)
+        st.checkbox("⚠️ Monitoring Warnings (Score 50–75%)", value=True)
+        st.checkbox("🌡️ Environmental Drift Alerts", value=True)
 
-    st.markdown("---")
-    st.markdown("### 🔔 Alert & Notification Preferences")
-    st.checkbox("🚨 High Priority / Critical Alerts", value=True)
-    st.checkbox("⚠️ Monitoring Warnings (Approaching Threshold)", value=True)
-    st.checkbox("🌡️ Environmental Shift Alerts", value=True)
-    st.checkbox("🔊 Web Audio Synthesizer Chime", value=True)
-
-    st.markdown("---")
-    st.markdown("### 🛡️ Firmware & Architecture")
-    st.caption("FreshSense AI OS v2.4 (Simulated IoT Core) • ESP32 Hardware Adapter Ready • Biological Decay Kinetics Engine v3.1")
+    with sc2:
+        st.markdown("### 🛡️ Firmware & Kinetics Engine")
+        render_html(
+            """
+            <div class="env-glass-card">
+                <div style="font-weight: 900; color: #059669; font-size: 1.1rem; margin-bottom: 4px;">FreshSense AI Core v3.2</div>
+                <p style="font-size: 0.84rem; color: #475569; line-height: 1.45;">Multi-Sensor Biological Decay Kinetics Engine • Three.js 3D WebGL Visualization Core • Multimodal Gemini AI Vision Copilot Active.</p>
+            </div>
+            """
+        )
 
 
 # Backward-compatible function aliases
@@ -490,5 +896,3 @@ render_sensor_conditions_section = render_environment_conditions
 render_device_container_page = render_settings_page
 render_food_detail_page = render_food_detail_view
 render_food_gallery_page = render_your_food_section
-
-

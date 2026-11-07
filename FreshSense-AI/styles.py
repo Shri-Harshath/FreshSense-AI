@@ -1,9 +1,8 @@
 """
-FreshSense AI - Reference-Grade Visual Design System
-===================================================
-Faithfully recreates the visual language, composition, color richness,
-3D product presentation, glassmorphic depth, radiant gradients, glowing HUDs,
-and typography of the reference UI suite.
+FreshSense AI - Reference-Grade Visual Design System & Glassmorphic Styles
+==========================================================================
+Faithfully recreates the visual language, colors, card designs, spacing,
+typography, soft shadows, and navigation from the reference design.
 """
 
 CUSTOM_CSS = """
@@ -17,7 +16,7 @@ CUSTOM_CSS = """
     --text-muted: #64748b;
     --text-subtle: #94a3b8;
     
-    /* Vibrant Multi-Color Gradients */
+    /* Vibrant Gradients matching Reference */
     --grad-primary: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 50%, #8a2be2 100%);
     --grad-home-active: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 45%, #9333ea 100%);
     --grad-mint-emerald: linear-gradient(135deg, #05b187 0%, #15c89b 50%, #3fe1b4 100%);
@@ -30,15 +29,15 @@ CUSTOM_CSS = """
     --grad-purple-violet: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%);
     
     /* Glassmorphism */
-    --card-glass: rgba(255, 255, 255, 0.88);
+    --card-glass: rgba(255, 255, 255, 0.94);
     --card-glass-hover: rgba(255, 255, 255, 0.98);
-    --card-border: rgba(255, 255, 255, 0.9);
+    --card-border: rgba(255, 255, 255, 0.95);
     
     /* Glows */
     --glow-cyan: rgba(0, 210, 255, 0.4);
-    --glow-coral: rgba(255, 78, 80, 0.4);
-    --glow-emerald: rgba(16, 185, 129, 0.4);
-    --glow-purple: rgba(147, 51, 234, 0.4);
+    --glow-coral: rgba(255, 78, 80, 0.35);
+    --glow-emerald: rgba(16, 185, 129, 0.35);
+    --glow-purple: rgba(147, 51, 234, 0.35);
 }
 
 /* Global Reset & Base Typography */
@@ -48,40 +47,43 @@ html, body, [class*="css"] {
     background-color: var(--bg-base) !important;
 }
 
-/* Radiant Pastel Ambient Background */
+/* Radiant Ambient Pastel Background */
 body {
     background: 
-        radial-gradient(circle at 10% 8%, rgba(0, 210, 255, 0.22) 0%, transparent 42%),
-        radial-gradient(circle at 90% 12%, rgba(255, 78, 80, 0.2) 0%, transparent 45%),
-        radial-gradient(circle at 50% 28%, rgba(16, 185, 129, 0.18) 0%, transparent 48%),
-        radial-gradient(circle at 15% 78%, rgba(245, 158, 11, 0.2) 0%, transparent 44%),
-        radial-gradient(circle at 88% 82%, rgba(147, 51, 234, 0.22) 0%, transparent 46%),
-        linear-gradient(180deg, #f0f7ff 0%, #e6fcf5 25%, #f5f0ff 60%, #fff1f2 100%) !important;
+        radial-gradient(circle at 10% 8%, rgba(0, 210, 255, 0.20) 0%, transparent 45%),
+        radial-gradient(circle at 90% 10%, rgba(255, 78, 80, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 50% 26%, rgba(16, 185, 129, 0.16) 0%, transparent 48%),
+        radial-gradient(circle at 15% 78%, rgba(245, 158, 11, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 88% 82%, rgba(147, 51, 234, 0.20) 0%, transparent 46%),
+        linear-gradient(180deg, #f0f7ff 0%, #e8fcf6 28%, #f6f1ff 65%, #fff1f2 100%) !important;
     background-attachment: fixed !important;
 }
 
-/* Main Container Max Width for Wide Layout */
+/* Wide Dashboard Container */
 .block-container {
-    max-width: 1440px !important;
-    padding: 1.2rem 2.2rem 5rem 2.2rem !important;
+    max-width: 1460px !important;
+    width: 96% !important;
+    padding: 1rem 2rem 5rem 2rem !important;
+    margin: 0 auto !important;
 }
 
-/* Header cleanup */
+/* Streamlit Header & Toolbar Cleanup */
 header[data-testid="stHeader"] {
     background: transparent !important;
 }
 
 /* ------------------------------------------------------------- */
-/* 1. DARK OBSIDIAN SIDEBAR (Matching Reference)                */
+/* 1. DEEP NAVY SIDEBAR (Matching Reference UI)                 */
 /* ------------------------------------------------------------- */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #060b18 0%, #0b152d 40%, #15102d 80%, #091325 100%) !important;
+    background: linear-gradient(180deg, #070d1e 0%, #0b152d 35%, #131233 75%, #081123 100%) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 6px 0 35px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 4px 0 35px rgba(0, 0, 0, 0.45) !important;
 }
 
 section[data-testid="stSidebar"] .block-container {
     padding: 1.5rem 1.1rem !important;
+    max-width: 100% !important;
 }
 
 /* Sidebar Brand Header */
@@ -90,38 +92,38 @@ section[data-testid="stSidebar"] .block-container {
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
 }
 
 .sidebar-brand-icon {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     border-radius: 12px;
     background: linear-gradient(135deg, #00d2ff 0%, #10b981 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
-    box-shadow: 0 0 16px rgba(0, 210, 255, 0.6);
+    font-size: 1.35rem;
+    box-shadow: 0 0 18px rgba(0, 210, 255, 0.6);
 }
 
 .sidebar-brand-text {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.25rem;
-    font-weight: 800;
+    font-size: 1.3rem;
+    font-weight: 900;
     color: #ffffff;
     letter-spacing: -0.01em;
     line-height: 1.1;
 }
 
 .sidebar-brand-tagline {
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     color: #93c5fd;
     font-weight: 600;
     letter-spacing: 0.02em;
 }
 
-/* Sidebar Navigation Items */
+/* Sidebar Nav Links */
 .sidebar-nav-active-pill {
     background: var(--grad-home-active) !important;
     color: #ffffff !important;
@@ -141,12 +143,12 @@ section[data-testid="stSidebar"] .block-container {
     color: #cbd5e1;
     font-weight: 600;
     border-radius: 999px;
-    padding: 10px 18px;
+    padding: 9px 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
     border: 1px solid transparent;
     transition: all 0.25s ease;
     cursor: pointer;
@@ -160,40 +162,13 @@ section[data-testid="stSidebar"] .block-container {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Sidebar Custom Radio buttons styling */
-section[data-testid="stSidebar"] div[role="radiogroup"] > label {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    border-radius: 999px !important;
-    padding: 9px 16px !important;
-    margin-bottom: 6px !important;
-    color: #cbd5e1 !important;
-    font-weight: 600 !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-    color: #ffffff !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    transform: translateX(4px) !important;
-}
-
-section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
-    background: var(--grad-home-active) !important;
-    color: #ffffff !important;
-    font-weight: 800 !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 4px 20px rgba(0, 210, 255, 0.45), 0 0 15px rgba(147, 51, 234, 0.35) !important;
-}
-
-/* Sidebar Lower Container Card */
+/* Sidebar Bottom Container Status Card */
 .sidebar-container-preview {
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 18px;
+    border-radius: 20px;
     padding: 14px 12px;
-    margin-top: 24px;
+    margin-top: 20px;
     text-align: center;
     backdrop-filter: blur(16px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
@@ -206,22 +181,36 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     background: rgba(16, 185, 129, 0.15);
     border: 1px solid rgba(16, 185, 129, 0.4);
     color: #34d399;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 3px 10px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 3px 12px;
     border-radius: 999px;
-    margin-top: 6px;
+    margin-top: 8px;
+}
+
+/* Sidebar Streamlit widgets */
+section[data-testid="stSidebar"] h3, section[data-testid="stSidebar"] h4 {
+    color: #ffffff !important;
+    font-family: 'Outfit', sans-serif !important;
+}
+
+section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
+    color: #cbd5e1 !important;
+}
+
+section[data-testid="stSidebar"] hr {
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* ------------------------------------------------------------- */
-/* 2. TOP HEADER CONTROLS (Matching Reference)                  */
+/* 2. TOP HEADER BAR (Matching Reference)                       */
 /* ------------------------------------------------------------- */
 .top-header-pill-bar {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 12px;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
 
 .top-node-pill {
@@ -230,25 +219,31 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     gap: 8px;
     background: rgba(255, 255, 255, 0.95);
     border: 1.5px solid rgba(255, 255, 255, 0.95);
-    padding: 6px 16px;
+    padding: 7px 18px;
     border-radius: 999px;
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     font-weight: 800;
     color: #0f172a;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .top-avatar-circle {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
-    font-size: 1rem;
+    font-size: 1.1rem;
     box-shadow: 0 2px 10px rgba(0, 210, 255, 0.4);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.top-avatar-circle:hover {
+    transform: scale(1.08);
 }
 
 /* ------------------------------------------------------------- */
@@ -256,38 +251,39 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
 /* ------------------------------------------------------------- */
 .brand-hero-title {
     font-family: 'Outfit', sans-serif;
-    font-size: 2.8rem;
+    font-size: 2.7rem;
     font-weight: 900;
     letter-spacing: -0.03em;
     background: linear-gradient(135deg, #00b4d8 0%, #2563eb 50%, #7c3aed 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 4px;
-    line-height: 1.1;
+    line-height: 1.12;
 }
 
 .brand-hero-desc {
     font-size: 0.95rem;
     color: #475569;
-    line-height: 1.5;
-    margin-bottom: 16px;
+    line-height: 1.48;
+    margin-bottom: 14px;
     font-weight: 500;
-    max-width: 380px;
+    max-width: 400px;
 }
 
 /* Overall Freshness Card (Mint-Emerald Gradient) */
 .overall-freshness-mint-card {
     background: var(--grad-mint-emerald);
     border-radius: 28px;
-    padding: 22px 24px;
+    padding: 20px 22px;
     color: #ffffff;
     box-shadow: 0 14px 36px rgba(5, 177, 135, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 18px;
     position: relative;
     overflow: hidden;
-    margin-top: 8px;
+    margin-top: 4px;
+    min-height: 180px;
 }
 
 .overall-freshness-mint-card::after {
@@ -304,8 +300,8 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
 
 .overall-donut-wrapper {
     position: relative;
-    width: 112px;
-    height: 112px;
+    width: 108px;
+    height: 108px;
     flex-shrink: 0;
 }
 
@@ -322,16 +318,53 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Center Smart Food Container Hero Card */
+.center-container-hero-card {
+    background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.98) 0%, rgba(240, 248, 255, 0.85) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    border-radius: 28px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 16px 40px rgba(0, 180, 216, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    min-height: 290px;
+    position: relative;
+    overflow: hidden;
+    animation: floatCenterContainer 5s ease-in-out infinite;
+}
+
+@keyframes floatCenterContainer {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.center-container-img {
+    width: 100%;
+    max-height: 235px;
+    object-fit: contain;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.12));
+    transition: transform 0.35s ease;
+}
+
+.center-container-hero-card:hover .center-container-img {
+    transform: scale(1.04);
+}
+
 /* Freshness Alert Banner (Sunset Coral Gradient) */
 .alert-banner-sunset {
     background: var(--grad-alert-sunset);
     border-radius: 28px;
-    padding: 22px 24px;
+    padding: 20px 22px;
     color: #ffffff;
     box-shadow: 0 14px 38px rgba(255, 78, 80, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
     position: relative;
     overflow: hidden;
-    height: 100%;
+    min-height: 290px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .alert-banner-tag {
@@ -346,22 +379,37 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     backdrop-filter: blur(8px);
     padding: 4px 12px;
     border-radius: 999px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    align-self: flex-start;
 }
 
 /* ------------------------------------------------------------- */
 /* 4. 6-COLUMN YOUR FOOD CARDS (Matching Reference Visuals)     */
 /* ------------------------------------------------------------- */
-.food-grid-wrapper {
-    margin: 22px 0 14px 0;
+.section-title-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 22px 0 12px 0;
+}
+
+.section-title-text {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #0a1024;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .food-card-tall {
     background: rgba(255, 255, 255, 0.94);
     border: 1.5px solid rgba(255, 255, 255, 0.95);
     border-radius: 24px;
-    padding: 16px 14px 14px 14px;
+    padding: 14px 12px 14px 12px;
     text-align: center;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.05);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -370,6 +418,8 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-height: 280px;
+    justify-content: space-between;
 }
 
 .food-card-tall:hover {
@@ -383,7 +433,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     top: 0;
     left: 0;
     right: 0;
-    height: 95px;
+    height: 90px;
     border-top-left-radius: 22px;
     border-top-right-radius: 22px;
     opacity: 0.85;
@@ -400,10 +450,20 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
 .food-visual-container {
     position: relative;
     z-index: 1;
-    font-size: 3.2rem;
-    margin-bottom: 6px;
+    width: 85px;
+    height: 85px;
+    margin: 4px auto 6px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.12));
     transition: transform 0.3s ease;
+}
+
+.food-visual-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .food-card-tall:hover .food-visual-container {
@@ -473,6 +533,10 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     padding: 16px 18px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
     transition: all 0.25s ease;
+    min-height: 135px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .env-glass-card:hover {
@@ -491,87 +555,45 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     gap: 18px;
     position: relative;
     overflow: hidden;
+    min-height: 135px;
 }
 
 .ai-orb-hologram {
-    width: 62px;
-    height: 62px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #00d2ff 0%, #3a7bd5 50%, #9333ea 100%);
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 900;
-    font-size: 1.25rem;
-    box-shadow: 0 0 24px rgba(0, 210, 255, 0.6), 0 0 35px rgba(147, 51, 234, 0.4);
+    position: relative;
+    filter: drop-shadow(0 0 16px rgba(0, 210, 255, 0.6));
     animation: orbPulseAnim 3s infinite alternate ease-in-out;
-    flex-shrink: 0;
+}
+
+.ai-orb-hologram img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
 }
 
 @keyframes orbPulseAnim {
-    0% { transform: scale(0.96); box-shadow: 0 0 18px rgba(0, 210, 255, 0.5); }
-    100% { transform: scale(1.06); box-shadow: 0 0 32px rgba(0, 210, 255, 0.8), 0 0 45px rgba(147, 51, 234, 0.6); }
+    0% { transform: scale(0.96); filter: drop-shadow(0 0 12px rgba(0, 210, 255, 0.5)); }
+    100% { transform: scale(1.06); filter: drop-shadow(0 0 24px rgba(0, 210, 255, 0.8)) drop-shadow(0 0 35px rgba(147, 51, 234, 0.5)); }
 }
 
 /* ------------------------------------------------------------- */
-/* 6. FLOATING BOTTOM NAVIGATION BAR                            */
+/* 6. UNIVERSAL BUTTONS & PILLS STYLING                         */
 /* ------------------------------------------------------------- */
-.bottom-floating-nav-bar {
-    position: fixed;
-    bottom: 22px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1.5px solid rgba(255, 255, 255, 0.95);
-    border-radius: 999px;
-    padding: 8px 16px;
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12), 0 0 20px rgba(0, 210, 255, 0.15);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    z-index: 9999;
-}
-
-.bottom-nav-active-pill {
-    background: var(--grad-home-active);
-    color: #ffffff !important;
-    font-weight: 800;
-    padding: 8px 20px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 18px rgba(0, 210, 255, 0.45), 0 0 12px rgba(147, 51, 234, 0.35);
-}
-
-.bottom-nav-idle-pill {
-    color: #475569;
-    font-weight: 700;
-    padding: 8px 16px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.bottom-nav-idle-pill:hover {
-    background: rgba(0, 0, 0, 0.04);
-    color: #0f172a;
-}
-
-/* Universal Streamlit Buttons Styling */
 div.stButton > button {
     border-radius: 999px !important;
     font-weight: 800 !important;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
     padding: 7px 18px !important;
+    font-size: 0.84rem !important;
     transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 div.stButton > button:hover {
@@ -586,26 +608,57 @@ div.stButton > button[kind="primary"] {
     box-shadow: 0 4px 16px rgba(0, 210, 255, 0.35) !important;
 }
 
+div.stButton > button[kind="secondary"] {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #1e293b !important;
+}
+
 /* Custom Food Button Gradients */
 .btn-coral div.stButton > button {
     background: linear-gradient(135deg, #ff4e50 0%, #f43f5e 100%) !important;
     color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35) !important;
 }
 .btn-emerald div.stButton > button {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
     color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
 }
 .btn-cyan div.stButton > button {
     background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%) !important;
     color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35) !important;
 }
 .btn-pink div.stButton > button {
     background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%) !important;
     color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35) !important;
 }
 .btn-amber div.stButton > button {
     background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
     color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+
+/* Bottom Nav Dock */
+div[data-testid="column"] > div > div.stButton > button {
+    border-radius: 999px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .block-container {
+        padding: 0.8rem 1rem 4rem 1rem !important;
+        width: 100% !important;
+    }
+    .brand-hero-title {
+        font-size: 2.1rem;
+    }
 }
 </style>
 """
@@ -640,6 +693,5 @@ function playFreshnessChime() {
         console.log("Audio chime skipped:", e);
     }
 }
-playFreshnessChime();
 </script>
 """
